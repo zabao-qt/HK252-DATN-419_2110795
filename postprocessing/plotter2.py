@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""
-plotter.py
-──────────
-Generates 2D and 3D bathymetric maps from data_clean.txt
-using thin-plate spline interpolation.
-
-Outputs:
-  depth_2d.png  — 2-D pcolormesh depth map with survey track
-  depth_3d.png  — 3-D surface model
-
-Usage:
-  python plotter.py [data_clean.txt]
-"""
-
 from __future__ import annotations
 import sys
 import numpy as np
@@ -21,16 +6,14 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import Rbf
 from scipy.spatial import cKDTree, Delaunay
 
-# ── tunables ──────────────────────────────────────────────────────────────────
 INPUT_FILE     = "data_clean.txt"
 GRID_N         = 120
 CLUSTER_EPS_M  = 3.0
 MIN_CLUSTER_SZ = 3
 KPA2MM         = 1000.0 / 9.80665
-Z_EXAG         = 10.0   # vertical exaggeration for 3-D
+Z_EXAG         = 10.0
 
 
-# ── data helpers ──────────────────────────────────────────────────────────────
 def load(path):
     df = pd.read_csv(path, header=None,
                      names=["lat", "lon", "kpa", "mm", "ts"],
@@ -92,7 +75,6 @@ def aggregate(df):
     return agg, x, y, z, lat0, lon0
 
 
-# ── interpolation ─────────────────────────────────────────────────────────────
 def interpolate_tps(agg):
     px = agg["x"].to_numpy(float)
     py = agg["y"].to_numpy(float)
@@ -121,7 +103,6 @@ def interpolate_tps(agg):
     return X, Y, Z
 
 
-# ── styling ───────────────────────────────────────────────────────────────────
 BG   = "#0d1117"
 AX   = "#161b22"
 EDGE = "#30363d"
@@ -141,7 +122,6 @@ def _dark2d(fig, ax):
     ax.title.set_color(HEAD)
 
 
-# ── plot functions ────────────────────────────────────────────────────────────
 def plot_2d(X, Y, Z, raw_x, raw_y, agg, out="depth_2d.png"):
     fig, ax = plt.subplots(figsize=(9, 8))
 
@@ -151,11 +131,9 @@ def plot_2d(X, Y, Z, raw_x, raw_y, agg, out="depth_2d.png"):
     cbar.ax.yaxis.set_tick_params(color=TICK)
     plt.setp(cbar.ax.yaxis.get_ticklabels(), color=TICK)
 
-    # raw GPS track
     ax.plot(raw_x, raw_y, color="white", linewidth=0.7,
             alpha=0.30, zorder=2, label="Survey track")
 
-    # aggregated stops coloured by depth
     ax.scatter(agg["x"], agg["y"], c=agg["z"], cmap="viridis_r",
                s=60, edgecolors="white", linewidths=0.5, zorder=3,
                vmin=float(Z.min()), vmax=float(Z.max()),
@@ -180,7 +158,7 @@ def plot_3d(X, Y, Z, agg, out="depth_3d.png"):
     ax  = fig.add_subplot(111, projection="3d")
     ax.set_facecolor(BG)
 
-    Zplot = -Z  # negate: deeper = lower on Z axis
+    Zplot = -Z  # negate: deeper
     ax.plot_surface(X, Y, Zplot * Z_EXAG,
                     cmap="viridis", alpha=0.88,
                     linewidth=0, antialiased=True)
@@ -188,7 +166,6 @@ def plot_3d(X, Y, Z, agg, out="depth_3d.png"):
     ax.scatter(agg["x"], agg["y"], -agg["z"] * Z_EXAG,
                c="white", s=20, depthshade=False, zorder=5)
 
-    # proportional box aspect
     xr = float(X.max() - X.min())
     yr = float(Y.max() - Y.min())
     zr = float(np.nanmax(np.abs(Z.data)) - np.nanmin(np.abs(Z.data)))
@@ -208,7 +185,6 @@ def plot_3d(X, Y, Z, agg, out="depth_3d.png"):
     return fig
 
 
-# ── main ──────────────────────────────────────────────────────────────────────
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else INPUT_FILE
     df = load(path)

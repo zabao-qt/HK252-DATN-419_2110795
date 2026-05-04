@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
 """
-compare_interpolation.py
-────────────────────────
 Leave-one-cluster-out cross-validation comparing three methods:
   • Linear     — Delaunay triangulation + linear interpolation (TIN)
   • Thin-plate — biharmonic / thin-plate spline (minimum curvature)
@@ -24,20 +21,17 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import Rbf, griddata
 from scipy.spatial import cKDTree
 
-# ── tunables ──────────────────────────────────────────────────────────────────
 INPUT_FILE     = "data_clean.txt"
-CLUSTER_EPS_M  = 3.0           # GPS jitter radius for stop clustering (metres)
-MIN_CLUSTER_SZ = 3             # min raw samples to form one representative stop
-IDW_POWER      = 2             # IDW distance exponent
-KPA2MM         = 1000.0 / 9.80665  # kPa → mm of water column
+CLUSTER_EPS_M  = 3.0
+MIN_CLUSTER_SZ = 3
+IDW_POWER      = 2
+KPA2MM         = 1000.0 / 9.80665
 
 METHODS = ["Linear (TIN)", "Thin-plate spline", "IDW (p=2)"]
 COLORS  = {"Linear (TIN)": "#4fc3f7",
            "Thin-plate spline": "#a5d6a7",
            "IDW (p=2)": "#ffcc80"}
 
-
-# ── helpers ───────────────────────────────────────────────────────────────────
 def load(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, header=None,
                      names=["lat", "lon", "kpa", "mm", "ts"],
@@ -94,7 +88,6 @@ def aggregate(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("ts").reset_index(drop=True)
 
 
-# ── interpolation methods ─────────────────────────────────────────────────────
 def pred_linear(tx, ty, tz, px, py) -> float:
     v = griddata((tx, ty), tz, (px, py), method="linear")
     return float(np.ravel(v)[0])
@@ -120,7 +113,6 @@ PREDICTORS = {
 }
 
 
-# ── cross-validation ──────────────────────────────────────────────────────────
 def cross_validate(agg: pd.DataFrame):
     x = agg["x"].to_numpy(float)
     y = agg["y"].to_numpy(float)
@@ -137,7 +129,6 @@ def cross_validate(agg: pd.DataFrame):
             except Exception:
                 pass
 
-    # intersect valid folds across all methods for a fair comparison
     valid = np.ones(n, bool)
     for m in METHODS:
         valid &= np.isfinite(raw_preds[m])
@@ -165,7 +156,6 @@ def cross_validate(agg: pd.DataFrame):
     return pd.DataFrame(results), pd.DataFrame(rows), idx
 
 
-# ── plots ─────────────────────────────────────────────────────────────────────
 def _dark(fig, axes):
     fig.patch.set_facecolor("#0d1117")
     for ax in (axes if hasattr(axes, "__iter__") else [axes]):
@@ -224,7 +214,6 @@ def plot_scatter(detail: pd.DataFrame, out="cv_scatter_plot.png"):
     print(f"  Saved {out}")
 
 
-# ── main ──────────────────────────────────────────────────────────────────────
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else INPUT_FILE
     df  = load(path)

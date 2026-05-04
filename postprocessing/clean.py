@@ -1,9 +1,5 @@
-# clean_data.py
 import os
 
-# -----------------------------
-# Config
-# -----------------------------
 RAW_FILE = "data.txt"
 CLEAN_FILE = "data_clean.txt"
 

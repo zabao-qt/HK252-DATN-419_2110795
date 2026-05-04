@@ -49,7 +49,6 @@ folium.PolyLine(
     weight=4
 ).add_to(m)
 
-# Hiển thị các chấm điểm dữ liệu
 for c in coords:
     folium.CircleMarker(
         location=c, 
